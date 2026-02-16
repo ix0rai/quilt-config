@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 QuiltMC
+ * Copyright 2023-2026 QuiltMC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,9 +139,9 @@ public class ReflectiveConfigCreator<C> implements Config.Creator {
 						String annotationType = annotation.annotationType().toString();
 						if (annotationType.contains("org.quiltmc.config.api.annotations.")) {
 							ConfigUtils.warn(String.format(
-								"Annotation (%s) applied to section class (%s). %n\tThis behaviour is unsupported, please apply to the field (%s.%s) instead!",
-								annotation.annotationType(), type.getName(),
-								field.getDeclaringClass().getSimpleName(), field.getName()
+									"Annotation (%s) applied to section class (%s). %n\tThis behaviour is unsupported, please apply to the field (%s.%s) instead!",
+									annotation.annotationType(), type.getName(),
+									field.getDeclaringClass().getSimpleName(), field.getName()
 							));
 						}
 					}
