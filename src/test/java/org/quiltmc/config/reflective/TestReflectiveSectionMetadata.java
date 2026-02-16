@@ -11,16 +11,21 @@ import org.quiltmc.config.api.metadata.NamingSchemes;
 import org.quiltmc.config.api.values.TrackedValue;
 import org.quiltmc.config.implementor_api.ConfigFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 public class TestReflectiveSectionMetadata extends AbstractConfigTest {
 	@Test
 	void testSectionMetadataOnValue() {
 		TestConfigOnValue config = ConfigFactory.create(TestUtil.TOML_ENV, "testmod", "testConfig", TestConfigOnValue.class);
 		NamingScheme expectedScheme = NamingSchemes.SNAKE_CASE;
 
+		// section field
 		Assertions.assertTrue(config.nested1.hasMetadata(SerializedNameConvention.TYPE));
 		NamingScheme sectionMetadata = config.nested1.metadata(SerializedNameConvention.TYPE);
 		Assertions.assertEquals(expectedScheme, sectionMetadata);
 
+		// field inside section
 		Assertions.assertTrue(config.nested1.sectionValue.hasMetadata(SerializedNameConvention.TYPE));
 		NamingScheme valueMetadata = config.nested1.sectionValue.metadata(SerializedNameConvention.TYPE);
 		Assertions.assertEquals(expectedScheme, valueMetadata);
@@ -32,20 +37,25 @@ public class TestReflectiveSectionMetadata extends AbstractConfigTest {
 
 	@Test
 	void testSectionMetadataOnClass() {
+		// redirect console output so we can check for a warning
+		PrintStream sysOut = System.out;
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		System.setOut(new PrintStream(outputStream));
+
 		TestConfigOnClass config = ConfigFactory.create(TestUtil.TOML_ENV, "testmod", "testConfig", TestConfigOnClass.class);
-		NamingScheme expectedScheme = NamingSchemes.SNAKE_CASE;
 
-		Assertions.assertTrue(config.nested1.hasMetadata(SerializedNameConvention.TYPE));
-		NamingScheme sectionMetadata = config.nested1.metadata(SerializedNameConvention.TYPE);
-		Assertions.assertEquals(expectedScheme, sectionMetadata);
-
-		Assertions.assertTrue(config.nested1.sectionValue.hasMetadata(SerializedNameConvention.TYPE));
-		NamingScheme valueMetadata = config.nested1.sectionValue.metadata(SerializedNameConvention.TYPE);
-		Assertions.assertEquals(expectedScheme, valueMetadata);
+		Assertions.assertTrue(outputStream.toString().contains("(Quilt Config) [WARNING] Annotation"));
 
 		Assertions.assertTrue(config.nested1.hasMetadata(Comment.TYPE));
 		// values with no comments have empty comment iterators
 		Assertions.assertFalse(config.nested1.sectionValue.metadata(Comment.TYPE).iterator().hasNext());
+
+		outputStream.reset();
+		ConfigFactory.create(TestUtil.TOML_ENV, "testmod", "testConfig2", TestArbitraryAnnotationOnClass.class);
+		Assertions.assertFalse(outputStream.toString().contains("(Quilt Config) [WARNING] Annotation"));
+
+		// restore normal console output
+		System.setOut(sysOut);
 	}
 
 	public static class TestConfigOnValue extends ReflectiveConfig {
@@ -63,6 +73,17 @@ public class TestReflectiveSectionMetadata extends AbstractConfigTest {
 		public final Nested nested1 = new Nested();
 
 		@SerializedNameConvention(NamingSchemes.SNAKE_CASE)
+		public static final class Nested extends ReflectiveConfig.Section {
+			public final TrackedValue<Integer> sectionValue = this.value(0);
+		}
+	}
+
+	@SuppressWarnings("all")
+	public static class TestArbitraryAnnotationOnClass extends ReflectiveConfig {
+		@Comment("Section!")
+		public final Nested nested1 = new Nested();
+
+		@Deprecated(forRemoval = true)
 		public static final class Nested extends ReflectiveConfig.Section {
 			public final TrackedValue<Integer> sectionValue = this.value(0);
 		}

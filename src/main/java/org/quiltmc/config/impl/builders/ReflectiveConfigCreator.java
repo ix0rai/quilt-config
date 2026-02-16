@@ -25,6 +25,7 @@ import org.quiltmc.config.api.exceptions.ConfigCreationException;
 import org.quiltmc.config.api.exceptions.ConfigFieldException;
 import org.quiltmc.config.api.metadata.MetadataType;
 import org.quiltmc.config.impl.tree.TrackedValueImpl;
+import org.quiltmc.config.impl.util.ConfigUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -32,8 +33,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 public class ReflectiveConfigCreator<C> implements Config.Creator {
+	private static final Logger LOGGER = Logger.getLogger(ReflectiveConfigCreator.class.getName());
 	private final Class<C> creatorClass;
 	private C instance;
 
@@ -129,6 +132,18 @@ public class ReflectiveConfigCreator<C> implements Config.Creator {
 				builder.section(field.getName(), b -> {
 					for (Annotation annotation : field.getAnnotations()) {
 						ConfigFieldAnnotationProcessors.applyAnnotationProcessors(annotation, b);
+					}
+
+					Class<?> type = field.getType();
+					for (Annotation annotation : type.getAnnotations()) {
+						String annotationType = annotation.annotationType().toString();
+						if (annotationType.contains("org.quiltmc.config.api.annotations.")) {
+							ConfigUtils.warn(String.format(
+								"Annotation (%s) applied to section class (%s). %n\tThis behaviour is unsupported, please apply to the field (%s.%s) instead!",
+								annotation.annotationType(), type.getName(),
+								field.getDeclaringClass().getSimpleName(), field.getName()
+							));
+						}
 					}
 
 					if (field.isAnnotationPresent(Processor.class)) {

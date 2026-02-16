@@ -35,6 +35,10 @@ public final class ConfigUtils {
 			String.class
 	};
 
+	public static void warn(String warning) {
+		System.out.print("(Quilt Config) [WARNING] " + warning);
+	}
+
 	public static void assertValueType(Object object) {
 		if (object == null) {
 			throw new TrackedValueException("Cannot create value with null default value");
