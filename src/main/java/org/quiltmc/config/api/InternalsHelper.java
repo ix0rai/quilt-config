@@ -18,7 +18,8 @@ package org.quiltmc.config.api;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.quiltmc.config.api.values.ValueTreeNode;
-import org.quiltmc.config.impl.builders.ReflectiveConfigCreator;
+
+import java.lang.reflect.Field;
 
 /**
  * Provides the implementation packages access to package-private methods. <strong>DO NOT USE THIS CLASS</strong>
@@ -31,12 +32,22 @@ public final class InternalsHelper {
 
 	public static <T extends ReflectiveConfig> void setWrappedConfig(T wrapped, Config config) {
 		wrapped.setWrappedConfig(config);
-		for (ValueTreeNode node : config.nodes()) {
+		wrapSections(wrapped, config.nodes());
+	}
+
+	private static <T> void wrapSections(T wrapped, Iterable<ValueTreeNode> nodes) {
+		for (ValueTreeNode node : nodes) {
 			if (node instanceof ValueTreeNode.Section) {
 				ValueTreeNode.Section section = (ValueTreeNode.Section) node;
-				ReflectiveConfigCreator.SectionMarker marker = section.metadata(ReflectiveConfigCreator.SectionMarker.TYPE);
-				if (marker != null) {
-					marker.self.setWrappedSection(section);
+				try {
+					Field field = wrapped.getClass().getField(section.key().getLastComponent());
+					Object reflectiveSection = field.get(wrapped);
+					if (reflectiveSection instanceof ReflectiveConfig.Section) {
+						((ReflectiveConfig.Section) reflectiveSection).setWrappedSection(section);
+						wrapSections(((ReflectiveConfig.Section) reflectiveSection), section);
+					}
+				} catch (Exception e) {
+					// Ignore silently here? Honestly don't know if this can even happen.
 				}
 			}
 		}

@@ -23,7 +23,6 @@ import org.quiltmc.config.api.values.TrackedValue;
 import org.quiltmc.config.impl.ConfigFieldAnnotationProcessors;
 import org.quiltmc.config.api.exceptions.ConfigCreationException;
 import org.quiltmc.config.api.exceptions.ConfigFieldException;
-import org.quiltmc.config.api.metadata.MetadataType;
 import org.quiltmc.config.impl.tree.TrackedValueImpl;
 import org.quiltmc.config.impl.util.ConfigUtils;
 
@@ -32,7 +31,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Objects;
 import java.util.logging.Logger;
 
 public class ReflectiveConfigCreator<C> implements Config.Creator {
@@ -42,31 +40,6 @@ public class ReflectiveConfigCreator<C> implements Config.Creator {
 
 	public ReflectiveConfigCreator(Class<C> creatorClass) {
 		this.creatorClass = creatorClass;
-	}
-
-	public static class SectionMarker {
-		public static MetadataType<SectionMarker, Builder> TYPE = MetadataType.create(Builder::new);
-		public final ReflectiveConfig.Section self;
-
-		private SectionMarker(ReflectiveConfig.Section self) {
-			this.self = self;
-		}
-
-		// ReadWriteCycleTest needs these to be equal
-		@Override
-		public boolean equals(Object obj) {
-			return obj instanceof SectionMarker && ((SectionMarker) obj).self.getClass().equals(this.self.getClass());
-		}
-
-		public static class Builder implements MetadataType.Builder<SectionMarker> {
-			private ReflectiveConfig.Section self;
-
-			@Override
-			public ReflectiveConfigCreator.SectionMarker build() {
-				Objects.requireNonNull(this.self);
-				return new SectionMarker(this.self);
-			}
-		}
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -169,8 +142,6 @@ public class ReflectiveConfigCreator<C> implements Config.Creator {
 							}
 						}
 					}
-
-					b.metadata(SectionMarker.TYPE, metaBuilder -> metaBuilder.self = (ReflectiveConfig.Section) defaultValue);
 				});
 			} else if (defaultValue == null) {
 				throw new ConfigFieldException("Default value for field '" + field.getName() + "' cannot be null");

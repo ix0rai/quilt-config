@@ -52,6 +52,32 @@ public class TestReflectiveSectionMetadata extends AbstractConfigTest {
 	}
 
 	@Test
+	void testSectionMetadataOnDoubleNestedValue() {
+		TestConfigOnDoubleNestedValue config = ConfigFactory.create(TestUtil.TOML_ENV, "testmod", "testConfig", TestConfigOnDoubleNestedValue.class);
+		NamingScheme expectedScheme = NamingSchemes.SNAKE_CASE;
+
+		// section field
+		Assertions.assertTrue(config.nested1.hasMetadata(SerializedNameConvention.TYPE));
+		NamingScheme sectionMetadata = config.nested1.metadata(SerializedNameConvention.TYPE);
+		Assertions.assertEquals(expectedScheme, sectionMetadata);
+
+		// section inside section
+		Assertions.assertTrue(config.nested1.nested2.hasMetadata(SerializedNameConvention.TYPE));
+		NamingScheme nestedMetadata = config.nested1.nested2.metadata(SerializedNameConvention.TYPE);
+		Assertions.assertEquals(expectedScheme, nestedMetadata);
+
+		// field inside section
+		Assertions.assertTrue(config.nested1.nested2.sectionValue.hasMetadata(SerializedNameConvention.TYPE));
+		NamingScheme valueMetadata = config.nested1.nested2.sectionValue.metadata(SerializedNameConvention.TYPE);
+		Assertions.assertEquals(expectedScheme, valueMetadata);
+
+		Assertions.assertTrue(config.nested1.hasMetadata(Comment.TYPE));
+		// values with no comments have empty comment iterators
+		Assertions.assertFalse(config.nested1.nested2.metadata(Comment.TYPE).iterator().hasNext());
+		Assertions.assertFalse(config.nested1.nested2.sectionValue.metadata(Comment.TYPE).iterator().hasNext());
+	}
+
+	@Test
 	void testSectionMetadataOnClass() {
 		// redirect console output so we can check for a warning
 		PrintStream sysOut = System.out;
@@ -81,6 +107,20 @@ public class TestReflectiveSectionMetadata extends AbstractConfigTest {
 
 		public static final class Nested extends ReflectiveConfig.Section {
 			public final TrackedValue<Integer> sectionValue = this.value(0);
+		}
+	}
+
+	public static class TestConfigOnDoubleNestedValue extends ReflectiveConfig {
+		@Comment("Section!")
+		@SerializedNameConvention(NamingSchemes.SNAKE_CASE)
+		public final Nested1 nested1 = new Nested1();
+
+		public static final class Nested1 extends ReflectiveConfig.Section {
+			public final Nested2 nested2 = new Nested2();
+
+			public static final class Nested2 extends ReflectiveConfig.Section {
+				public final TrackedValue<Integer> sectionValue = this.value(0);
+			}
 		}
 	}
 
