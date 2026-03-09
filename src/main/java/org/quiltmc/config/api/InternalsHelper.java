@@ -18,6 +18,7 @@ package org.quiltmc.config.api;
 
 import org.jetbrains.annotations.ApiStatus;
 import org.quiltmc.config.api.values.ValueTreeNode;
+import org.quiltmc.config.impl.util.ConfigUtils;
 
 import java.lang.reflect.Field;
 
@@ -47,7 +48,10 @@ public final class InternalsHelper {
 						wrapSections(((ReflectiveConfig.Section) reflectiveSection), section);
 					}
 				} catch (Exception e) {
-					// Ignore silently here? Honestly don't know if this can even happen.
+					String key = wrapped instanceof Config ? ((Config) wrapped).id()
+							: (wrapped instanceof ReflectiveConfig.Section ? ((ReflectiveConfig.Section) wrapped).key().toString()
+									: "unknown");
+					ConfigUtils.error("Internal error wrapping sections for config " + key, e);
 				}
 			}
 		}

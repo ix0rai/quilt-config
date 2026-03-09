@@ -36,7 +36,13 @@ public final class ConfigUtils {
 	};
 
 	public static void warn(String warning) {
-		System.out.print("(Quilt Config) [WARNING] " + warning);
+		System.out.println("(Quilt Config) [WARNING] " + warning);
+	}
+
+	public static void error(String reason, Exception e) {
+		System.out.println("(Quilt Config) [ERROR] " + reason + ":");
+		e.printStackTrace();
+		System.out.println("(Quilt Config) [ERROR] Please report this at https://github.com/quiltmc/quilt-config/issues!");
 	}
 
 	public static void assertValueType(Object object) {
